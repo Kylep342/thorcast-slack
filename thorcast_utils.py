@@ -7,6 +7,27 @@ import requests
 THORCAST_API_URL = os.environ['THORCAST_API_URL']
 
 
+def help_message():
+    return """
+    Usage:
+
+    --------
+
+    Get a forecast for a chosen city, state, and period
+    (!thorcast|!thor|@Thorcast) city, state{{, period }}
+
+    Examples:
+    !thor Chicago, IL, Tomorrow night
+    !thorcast Los Angeles, California
+    @Thorcast New York City, New York, Wednesday
+
+    --------
+
+    Get a random forecast:
+    (!thorcast|!thor|@Thorcast) random
+    """.replace('^[\t]+', '').replace('[\t] +$', '\n')
+
+
 def handle_error(http_resp):
     data = http_resp.json()
     if http_resp.status_code == 404:
@@ -28,6 +49,11 @@ def get_forecast(url):
         return resp.json()['forecast']
     else:
         return handle_error(resp)
+
+
+def random_forecast():
+    url = f'{THORCAST_API_URL}/api/forecast/random'
+    return get_forecast(url)
 
 
 def forecast_control(city, state, period=None):
@@ -67,8 +93,9 @@ def process_events(slack_client, slack_events, thorcast_id):
             cmd_prefix = f"^(?:(?:!thor(?:cast)?)|(?:{thorcast_id}))"
             if re.match(cmd_prefix, msg):
                 message = process_command(msg, cmd_prefix)
-                slack_client.api_call(
-                    'chat.postMessage',
-                    channel=channel,
-                    text=message
-                )
+                if message:
+                    slack_client.api_call(
+                        'chat.postMessage',
+                        channel=channel,
+                        text=message
+                    )
