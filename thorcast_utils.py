@@ -46,7 +46,8 @@ def handle_error(http_resp):
 def get_forecast(url):
     resp = requests.get(url)
     if resp.status_code == 200:
-        return resp.json()['forecast']
+        api_resp = resp.json()
+        return f"{api_resp['period']}'s forecast for {api_resp['city']}, {api_resp['state']}:\n{api_resp['forecast']}"
     else:
         return handle_error(resp)
 
