@@ -53,7 +53,7 @@ def get_forecast(url):
 
 
 def random_forecast():
-    url = f'{THORCAST_API_URL}/api/forecast/random'
+    url = f'{THORCAST_API_URL}/api/forecast/detailed/random'
     return get_forecast(url)
 
 
@@ -62,9 +62,9 @@ def forecast_control(city, state, period=None):
     state = state.replace(' ', '+')
     if period:
         period = period.replace(' ', '+')
-        url = f"{THORCAST_API_URL}/api/forecast/city={city}&state={state}&period={period}"
+        url = f"{THORCAST_API_URL}/api/forecast/detailed/city={city}&state={state}&period={period}"
     else:
-        url = f"{THORCAST_API_URL}/api/forecast/city={city}&state={state}"
+        url = f"{THORCAST_API_URL}/api/forecast/detailed/city={city}&state={state}"
     return get_forecast(url)
 
 
@@ -73,6 +73,8 @@ def process_command(cmd, cmd_prefix):
     try:
         matches = re.match(cmd_re, cmd).groups()
         if not matches[0]:
+            message = forecast_control(*matches[1:])
+        elif not matches[0] and matches[3].lower() == 'hourly':
             message = forecast_control(*matches[1:])
         else:
             if matches[0] == 'help':
