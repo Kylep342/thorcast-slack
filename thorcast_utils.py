@@ -11,10 +11,13 @@ def help_message():
     return """
     Usage:
 
+    All commands must be prefixed with one of the following:
+    prefix = (!thorcast|!thor|@Thorcast)
+
     --------
 
     Get a forecast for a chosen city, state, and period
-    (!thorcast|!thor|@Thorcast) city, state{{, period }}
+    prefix city, state{{, period }}
 
     Examples:
     !thor Chicago, IL, Tomorrow night
@@ -24,7 +27,16 @@ def help_message():
     --------
 
     Get a random forecast:
-    (!thorcast|!thor|@Thorcast) random
+    prefix random
+
+    --------
+
+    Get an hourly forecast for a chosen city and state
+    prefix city, state, hourly{{, hours }}
+
+    Examples:
+    !thor Muncie, IN, hourly
+    !thorcast Santa Fe, New Mexico, hourly, 8
     """.replace('^[\t]+', '').replace('[\t] +$', '\n')
 
 
@@ -43,7 +55,7 @@ def handle_error(http_resp):
     return message
 
 
-def get_forecast(url):
+def get_detailed_forecast(url):
     resp = requests.get(url)
     if resp.status_code == 200:
         api_resp = resp.json()
@@ -52,29 +64,41 @@ def get_forecast(url):
         return handle_error(resp)
 
 
+def get_hourly_forecast(url):
+    resp = requests.get(url)
+    if resp.status_code == 200:
+        api_resp = resp.json()
+        return f"{api_resp['hours']} hour forecast for {api_resp['city']}, {api_resp['state']}:\n{api_resp['forecast']}"
+
+
 def random_forecast():
     url = f'{THORCAST_API_URL}/api/forecast/detailed/random'
-    return get_forecast(url)
+    return get_detailed_forecast(url)
 
 
-def forecast_control(city, state, period=None):
+def forecast_control(city, state, period=None, hours=None):
     city = city.replace(' ', '+')
     state = state.replace(' ', '+')
-    if period:
+    if period == 'hourly':
+        url = f"{THORCAST_API_URL}/api/forecast/hourly?city={city}&state={state}{('&hours=' + hours) if hours else ''}"
+        return get_hourly_forecast(url)
+    elif period:
         period = period.replace(' ', '+')
-        url = f"{THORCAST_API_URL}/api/forecast/detailed/city={city}&state={state}&period={period}"
+        url = f"{THORCAST_API_URL}/api/forecast/detailed?city={city}&state={state}&period={period}"
+        return get_detailed_forecast(url)
     else:
-        url = f"{THORCAST_API_URL}/api/forecast/detailed/city={city}&state={state}"
-    return get_forecast(url)
+        url = f"{THORCAST_API_URL}/api/forecast/detailed?city={city}&state={state}"
+        return get_detailed_forecast(url)
 
 
 def process_command(cmd, cmd_prefix):
-    cmd_re = f'{cmd_prefix} (?:(help|random)|(?:([a-zA-Z ]+), ?([a-zA-Z ]+),? ?([a-zA-Z ]+)?))$'
+    cmd_re = f'{cmd_prefix} (?:(help|random)|(?:([a-zA-Z ]+), ?([a-zA-Z ]+),? ?([a-zA-Z ]+)?,? ?([0-9]+)?))$'
     try:
         matches = re.match(cmd_re, cmd).groups()
         if not matches[0]:
             message = forecast_control(*matches[1:])
         elif not matches[0] and matches[3].lower() == 'hourly':
+            matches[3] == 'hourly'
             message = forecast_control(*matches[1:])
         else:
             if matches[0] == 'help':
