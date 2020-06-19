@@ -43,7 +43,7 @@ def help_message():
 def handle_error(http_resp):
     data = http_resp.json()
     if http_resp.status_code == 404:
-        message = f"""{data['info']}
+        message = f"""{data['error']}
         Your inputs:
         City: {data['city']}
         State: {data['state']}
