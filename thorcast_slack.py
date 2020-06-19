@@ -6,7 +6,7 @@ from slackclient import SlackClient
 
 import thorcast_utils as utils
 
-BOT_TOKEN = os.environ['SLACK_API_TOKEN']
+BOT_TOKEN = os.getenv('SLACK_API_TOKEN')
 
 
 def thorcast_slack():
